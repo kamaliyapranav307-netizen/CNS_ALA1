@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CipherRelay — Hybrid AES/RSA Messenger</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Web Crypto API · hybrid encryption lab</div>
+  <h1>Cipher<span>Relay</span><span class="rsa">•</span></h1>
+  <p class="sub">A message is sealed with a one-time <strong style="color:var(--aes)">AES-256</strong> key.
+  That key is then sealed with the recipient's <strong style="color:var(--rsa)">RSA-2048</strong> public key,
+  so only their private key can unlock it. This is the same pattern TLS, PGP, and Signal build on.</p>
+</header>
+
+<main>
+
+  <div class="pipeline" id="pipeline">
+    <div class="stage" data-stage="0"><span class="n">01</span>Generate RSA pair</div>
+    <div class="stage" data-stage="1"><span class="n">02</span>AES-encrypt message</div>
+    <div class="stage" data-stage="2"><span class="n">03</span>RSA-encrypt AES key</div>
+    <div class="stage" data-stage="3"><span class="n">04</span>Transmit sealed bundle</div>
+    <div class="stage" data-stage="4"><span class="n">05</span>Decrypt at recipient</div>
+  </div>
+
+  <!-- STEP 1: RSA KEYS -->
+  <div class="panel">
+    <h2><span class="tag rsa">RSA</span> Recipient key pair</h2>
+    <p style="color:var(--muted);font-size:13px;margin-top:0;">Generate the recipient's public/private RSA-OAEP
+    keypair. The public key locks the AES key; only the matching private key can unlock it.</p>
+    <div class="row">
+      <button class="secondary" id="genKeysBtn">Generate RSA-2048 keypair</button>
+    </div>
+    <div class="grid2" style="margin-top:14px;">
+      <div class="field">
+        <label>Public key (SPKI, base64)</label>
+        <div class="mono-out empty" id="pubKeyOut">Not generated yet…</div>
+      </div>
+      <div class="field">
+        <label>Private key — kept by recipient only</label>
+        <div class="mono-out empty" id="privKeyOut">Not generated yet…</div>
+      </div>
+    </div>
+    <div class="status" id="keyStatus"></div>
+  </div>
+
+  <!-- STEP 2: SENDER SIDE -->
+  <div class="panel">
+    <h2><span class="tag aes">Sender</span> Compose &amp; seal message</h2>
+    <div class="field">
+      <label>Plaintext message</label>
+      <textarea id="plaintext" rows="3" placeholder="Type the message you want to send securely…">Meet me at the north gate at 9pm. Bring the drive.</textarea>
+    </div>
+    <div class="row">
+      <button class="primary" id="encryptBtn" disabled>Encrypt message (AES-GCM) + seal key (RSA-OAEP)</button>
+    </div>
+
+    <div class="field">
+      <label><span class="tag aes" style="margin-right:6px;">AES</span>Ciphertext (base64)</label>
+      <div class="mono-out empty" id="cipherOut">Waiting for encryption…</div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>AES-GCM IV (nonce)</label>
+        <div class="mono-out empty" id="ivOut">—</div>
+      </div>
+      <div class="field">
+        <label><span class="tag rsa" style="margin-right:6px;">RSA</span>Encrypted AES key (base64)</label>
+        <div class="mono-out empty" id="encKeyOut">—</div>
+      </div>
+    </div>
+    <div class="status" id="encryptStatus"></div>
+  </div>
+
+  <!-- STEP 3: RECIPIENT SIDE -->
+  <div class="panel">
+    <h2><span class="tag rsa" style="border-color:var(--ok);color:var(--ok);">Recipient</span> Unseal &amp; decrypt</h2>
+    <p style="color:var(--muted);font-size:13px;margin-top:0;">The recipient uses their RSA private key to unlock
+    the AES key, then uses that AES key to decrypt the message.</p>
+    <div class="row">
+      <button class="decrypt" id="decryptBtn" disabled>Decrypt AES key (RSA) → Decrypt message (AES)</button>
+    </div>
+    <div class="field">
+      <label>Recovered plaintext</label>
+      <div class="mono-out empty" id="plainOut">Nothing decrypted yet…</div>
+    </div>
+    <div class="status" id="decryptStatus"></div>
+  </div>
+
+</main>
+
+<footer>
+  &gt; Algorithms: AES-256-GCM (message confidentiality + integrity) · RSA-OAEP-2048 / SHA-256 (key wrapping)<br>
+  &gt; All operations run client-side via the browser's SubtleCrypto (Web Crypto API). No keys or plaintext leave this page.<br>
+  &gt; For the GMIU submission: capture a screenshot after Step 3 showing ciphertext, encrypted key, and recovered plaintext.
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
